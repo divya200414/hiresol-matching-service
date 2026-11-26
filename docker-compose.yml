@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16
+    container_name: hiresol-postgres
+    environment:
+      POSTGRES_DB: hiresol
+      POSTGRES_USER: hiresol_user
+      POSTGRES_PASSWORD: hiresol_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hiresol_user -d hiresol"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    container_name: hiresol-api
+    environment:
+      DATABASE_URL: postgresql+psycopg://hiresol_user:hiresol_password@db:5432/hiresol
+      HIRESOL_API_KEY: ${HIRESOL_API_KEY}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
